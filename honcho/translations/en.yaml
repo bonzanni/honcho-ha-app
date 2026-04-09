@@ -1,0 +1,40 @@
+configuration:
+  openrouter_api_key:
+    name: OpenRouter API Key
+    description: Your OpenRouter API key (required)
+  deriver_model:
+    name: Deriver Model
+    description: OpenRouter model for the deriver worker (processes conversation memory)
+  summary_model:
+    name: Summary Model
+    description: OpenRouter model for session summaries
+  dream_model:
+    name: Dream Model
+    description: OpenRouter model for dream consolidation (deep memory processing)
+  dialectic_minimal_model:
+    name: "Dialectic: Minimal"
+    description: Cheapest/fastest model - quick one-shot responses
+  dialectic_low_model:
+    name: "Dialectic: Low"
+    description: Simple reasoning with limited tool use
+  dialectic_medium_model:
+    name: "Dialectic: Medium"
+    description: Balanced reasoning with thinking budget
+  dialectic_high_model:
+    name: "Dialectic: High"
+    description: Deep reasoning with extended tool use
+  dialectic_max_model:
+    name: "Dialectic: Max"
+    description: Maximum capability - most expensive
+  log_level:
+    name: Log Level
+    description: Application log verbosity
+  auth_enabled:
+    name: Enable Authentication
+    description: Require JWT authentication for API access
+  jwt_secret:
+    name: JWT Secret
+    description: Secret key for signing JWT tokens (auto-generated if empty when auth is enabled)
+  deriver_enabled:
+    name: Enable Deriver
+    description: Run the background deriver worker for AI memory processing

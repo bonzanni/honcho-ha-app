@@ -1,0 +1,9 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+# If deriver is disabled, exit cleanly to prevent restart loops
+if ! bashio::config.true 'deriver_enabled'; then
+    exit 256
+fi
+
+bashio::log.warning "Honcho Deriver stopped."

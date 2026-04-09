@@ -1,0 +1,8 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Graceful PostgreSQL shutdown
+# ==============================================================================
+
+bashio::log.info "Stopping PostgreSQL..."
+su - postgres -c "/usr/lib/postgresql/17/bin/pg_ctl stop -D /data/postgresql -m fast" || true

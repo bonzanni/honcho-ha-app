@@ -1,0 +1,39 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Start Honcho Deriver worker (conditionally)
+# ==============================================================================
+
+declare CONFIG_DIR="/data/honcho"
+
+# Check if deriver is enabled
+declare DERIVER_DISABLED=false
+if bashio::supervisor.ping 2>/dev/null; then
+    if ! bashio::config.true 'deriver_enabled'; then
+        DERIVER_DISABLED=true
+    fi
+else
+    # Standalone mode — check env file
+    if [ -f "${CONFIG_DIR}/env" ] && grep -q "DERIVER_ENABLED=false" "${CONFIG_DIR}/env"; then
+        DERIVER_DISABLED=true
+    fi
+fi
+
+if bashio::var.true "${DERIVER_DISABLED}"; then
+    bashio::log.info "Deriver is disabled. Sleeping."
+    exec sleep infinity
+fi
+
+# Load environment
+if [ -f "${CONFIG_DIR}/env" ]; then
+    set -a
+    # shellcheck source=/dev/null
+    source "${CONFIG_DIR}/env"
+    set +a
+fi
+
+cd /app
+
+bashio::log.info "Starting Honcho Deriver worker..."
+cd /app
+exec /app/.venv/bin/python -m src.deriver

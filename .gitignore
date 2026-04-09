@@ -1,0 +1,27 @@
+# Claude
+.claude/
+docs/superpowers/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Docker
+*.tar
+*.tar.gz

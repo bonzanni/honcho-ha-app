@@ -1,0 +1,17 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Start Redis with AOF persistence
+# ==============================================================================
+
+declare REDIS_DATA="/data/redis"
+
+mkdir -p "${REDIS_DATA}"
+
+bashio::log.info "Starting Redis..."
+exec redis-server \
+    --dir "${REDIS_DATA}" \
+    --appendonly yes \
+    --bind 127.0.0.1 \
+    --port 6379 \
+    --protected-mode yes

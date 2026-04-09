@@ -1,0 +1,30 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Start PostgreSQL 17 with pgvector
+# ==============================================================================
+
+declare PGDATA="/data/postgresql"
+
+# Ensure data directory exists (HA mounts /data as an empty volume on first run)
+mkdir -p "${PGDATA}"
+
+# Initialize database if first run
+if [ ! -f "${PGDATA}/PG_VERSION" ]; then
+    bashio::log.info "Initializing PostgreSQL database..."
+    chown -R postgres:postgres "${PGDATA}"
+    su - postgres -c "/usr/lib/postgresql/17/bin/initdb -D ${PGDATA} --encoding=UTF8 --locale=C.UTF-8"
+
+    # Restrict connections to local socket and localhost TCP only
+    cat > "${PGDATA}/pg_hba.conf" <<EOF
+# TYPE  DATABASE  USER  ADDRESS      METHOD
+local   all       all                trust
+host    all       all   127.0.0.1/32 trust
+host    all       all   ::1/128      trust
+EOF
+fi
+
+chown -R postgres:postgres "${PGDATA}"
+
+bashio::log.info "Starting PostgreSQL..."
+exec su - postgres -c "/usr/lib/postgresql/17/bin/postgres -D ${PGDATA}"

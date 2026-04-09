@@ -1,0 +1,47 @@
+name: Honcho
+description: AI memory infrastructure for Home Assistant
+version: "0.1.6"
+slug: honcho
+url: https://github.com/bonzanni/honcho-ha-app
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: application
+ports:
+  8000/tcp: null
+ports_description:
+  8000/tcp: Honcho API
+watchdog: http://[HOST]:8000/health
+backup: cold
+map:
+  - share:rw
+  - data:rw
+options:
+  openrouter_api_key: ""
+  deriver_model: "google/gemini-2.5-flash-lite"
+  summary_model: "google/gemini-2.5-flash"
+  dream_model: "anthropic/claude-sonnet-4.6"
+  dialectic_minimal_model: "google/gemini-2.5-flash-lite"
+  dialectic_low_model: "google/gemini-2.5-flash-lite"
+  dialectic_medium_model: "anthropic/claude-haiku-4.5"
+  dialectic_high_model: "anthropic/claude-haiku-4.5"
+  dialectic_max_model: "anthropic/claude-haiku-4.5"
+  log_level: "info"
+  auth_enabled: false
+  jwt_secret: ""
+  deriver_enabled: true
+schema:
+  openrouter_api_key: password
+  deriver_model: str
+  summary_model: str
+  dream_model: str
+  dialectic_minimal_model: str
+  dialectic_low_model: str
+  dialectic_medium_model: str
+  dialectic_high_model: str
+  dialectic_max_model: str
+  log_level: list(debug|info|warning|error|critical)
+  auth_enabled: bool
+  jwt_secret: password?
+  deriver_enabled: bool
