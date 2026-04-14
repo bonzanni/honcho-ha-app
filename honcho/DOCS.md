@@ -69,3 +69,50 @@ Other Home Assistant add-ons can reach the Honcho API on the internal Docker net
 **Do not hardcode the hostname** in dependent add-ons. Use the Supervisor API to discover the address dynamically.
 
 Optionally, enable the host port mapping in the add-on configuration to expose the API at `http://<ha-ip>:<port>`.
+
+## OpenClaw Plugin Integration
+
+The [OpenClaw Honcho plugin](https://github.com/plastic-labs/openclaw-honcho) defaults to the managed cloud API (`api.honcho.dev`). To use your local add-on instead, you **must** configure the `baseUrl` in your `openclaw.json`:
+
+### Without authentication (default)
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "openclaw-honcho": {
+        "enabled": true,
+        "config": {
+          "baseUrl": "http://local-honcho:8000"
+        }
+      }
+    }
+  }
+}
+```
+
+Replace `local-honcho` with the correct hostname for your setup (see Network Access above).
+
+### With authentication
+
+1. Enable `auth_enabled` in the add-on configuration and restart.
+2. Copy the `api_token` value from the add-on's Configuration tab.
+3. Configure the plugin:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "openclaw-honcho": {
+        "enabled": true,
+        "config": {
+          "baseUrl": "http://local-honcho:8000",
+          "apiKey": "<paste api_token here>"
+        }
+      }
+    }
+  }
+}
+```
+
+> **Important:** If you omit `baseUrl`, the plugin sends all requests to `api.honcho.dev` (the managed cloud API), which will fail with a 401 error unless you have a cloud API key.
