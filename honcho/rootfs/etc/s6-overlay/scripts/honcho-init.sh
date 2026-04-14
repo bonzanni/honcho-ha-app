@@ -154,19 +154,33 @@ elif bashio::var.true "${SUPERVISED}"; then
     fi
 
     # JWT secret validation / auto-generation
-    if bashio::var.true "${AUTH_ENABLED}" && [ -z "${JWT_SECRET}" ]; then
-        if [ -f "${CONFIG_DIR}/.jwt_secret" ]; then
-            JWT_SECRET=$(cat "${CONFIG_DIR}/.jwt_secret")
-            bashio::log.info "Using previously generated JWT secret."
-        else
-            JWT_SECRET=$(/app/.venv/bin/python -c "import secrets; print(secrets.token_urlsafe(48))")
-            echo "${JWT_SECRET}" > "${CONFIG_DIR}/.jwt_secret"
-            chmod 600 "${CONFIG_DIR}/.jwt_secret"
-            bashio::log.info "Auto-generated JWT secret."
+    if bashio::var.true "${AUTH_ENABLED}"; then
+        if [ -z "${JWT_SECRET}" ]; then
+            if [ -f "${CONFIG_DIR}/.jwt_secret" ]; then
+                JWT_SECRET=$(cat "${CONFIG_DIR}/.jwt_secret")
+                bashio::log.info "Using previously generated JWT secret."
+            else
+                JWT_SECRET=$(/app/.venv/bin/python -c "import secrets; print(secrets.token_urlsafe(48))")
+                echo "${JWT_SECRET}" > "${CONFIG_DIR}/.jwt_secret"
+                chmod 600 "${CONFIG_DIR}/.jwt_secret"
+                bashio::log.info "Auto-generated JWT secret."
+            fi
+            bashio::addon.option 'jwt_secret' "${JWT_SECRET}"
         fi
-        # Write the secret back to the HA config so it's visible in the Configuration tab
-        bashio::addon.option 'jwt_secret' "${JWT_SECRET}"
-        bashio::log.info "JWT secret available in the add-on Configuration tab."
+
+        # Generate a non-expiring admin JWT token for API access.
+        # This token can be used as the apiKey in the OpenClaw Honcho plugin.
+        declare API_TOKEN
+        API_TOKEN=$(/app/.venv/bin/python -c "
+import jwt, sys
+token = jwt.encode({'t': '', 'ad': True}, sys.stdin.read().encode('utf-8'), algorithm='HS256')
+print(token)
+" <<< "${JWT_SECRET}")
+
+        echo "${API_TOKEN}" > "${CONFIG_DIR}/.api_token"
+        chmod 600 "${CONFIG_DIR}/.api_token"
+        bashio::addon.option 'api_token' "${API_TOKEN}"
+        bashio::log.info "API token generated. Find it in the Configuration tab."
     fi
 
     # Write base env vars
