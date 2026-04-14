@@ -2,12 +2,16 @@
 # ==============================================================================
 # Integration test for Honcho HA add-on auth flows.
 #
-# Builds the Docker image and tests:
+# Builds the Docker image, then uses a custom entrypoint that bypasses
+# S6-overlay/bashio (which require the HA Supervisor) and starts PostgreSQL,
+# Redis, and the Honcho API directly.
+#
+# Tests:
 #   1. No-auth flow: API accepts requests without credentials
 #   2. Auth flow: API rejects without token, accepts with admin JWT
 #
 # Usage: bash tests/test-auth.sh
-# Requires: docker
+# Requires: docker, python3 with PyJWT (pip install PyJWT)
 # ==============================================================================
 
 set -euo pipefail
@@ -27,8 +31,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-log_pass() { echo "  PASS: $1"; ((PASS++)); }
-log_fail() { echo "  FAIL: $1"; ((FAIL++)); }
+log_pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
+log_fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 wait_for_health() {
     local url="http://localhost:${HONCHO_PORT}/health"
@@ -45,7 +49,7 @@ wait_for_health() {
     done
     echo "ERROR: API did not become healthy within ${max_wait}s."
     echo "--- Container logs ---"
-    docker logs "${CONTAINER_NAME}" 2>&1 | tail -50
+    docker logs "${CONTAINER_NAME}" 2>&1 | tail -80
     return 1
 }
 
@@ -56,6 +60,68 @@ http_status() {
     local url="$1"; shift
     curl -s -o /dev/null -w "%{http_code}" -X "${method}" "$@" "${url}" 2>/dev/null || echo "000"
 }
+
+# Entrypoint that bypasses S6/bashio (which require HA Supervisor) and starts
+# PostgreSQL, Redis, runs migrations, then launches the Honcho API directly.
+# Auth-related env vars (AUTH_USE_AUTH, AUTH_JWT_SECRET) are passed via docker -e.
+ENTRYPOINT_SCRIPT='
+set -e
+PG_BIN=/usr/lib/postgresql/17/bin
+PGDATA=/data/postgresql
+mkdir -p /run/postgresql "${PGDATA}" /data/redis
+chown -R postgres:postgres /run/postgresql "${PGDATA}"
+if [ ! -f "${PGDATA}/PG_VERSION" ]; then
+    su - postgres -c "${PG_BIN}/initdb -D ${PGDATA} --encoding=UTF8 --locale=C.UTF-8" 2>&1
+    cat > "${PGDATA}/pg_hba.conf" <<PGEOF
+local   all   all              trust
+host    all   all   127.0.0.1/32 trust
+host    all   all   ::1/128      trust
+PGEOF
+    chown postgres:postgres "${PGDATA}/pg_hba.conf"
+fi
+su - postgres -c "${PG_BIN}/pg_ctl start -D ${PGDATA} -l /tmp/pg.log" 2>&1
+for i in $(seq 1 30); do
+    if su - postgres -c "${PG_BIN}/pg_isready -q" 2>/dev/null; then break; fi
+    sleep 1
+done
+su - postgres -c "${PG_BIN}/psql -tc \"SELECT 1 FROM pg_database WHERE datname='"'"'honcho'"'"'\" | grep -q 1" \
+    || su - postgres -c "${PG_BIN}/createdb honcho"
+su - postgres -c "${PG_BIN}/psql -d honcho -c \"CREATE EXTENSION IF NOT EXISTS vector;\""
+redis-server --daemonize yes --dir /data/redis --appendonly yes --bind 127.0.0.1 --protected-mode yes 2>&1
+cd /app
+export DB_CONNECTION_URI="postgresql+psycopg://postgres@localhost:5432/honcho"
+export CACHE_URL="redis://127.0.0.1:6379/0"
+export CACHE_ENABLED=true
+export PSYCOPG_IMPL=python
+/app/.venv/bin/python scripts/provision_db.py 2>&1
+echo "Starting Honcho API (AUTH_USE_AUTH=${AUTH_USE_AUTH:-false})..."
+exec /app/.venv/bin/python -m uvicorn health:app --host 0.0.0.0 --port 8000 --app-dir /app
+'
+
+# Dummy LLM provider env vars. The Honcho server validates that all configured
+# providers have API keys at import time. We use "custom" (OpenAI-compatible)
+# with fake keys — no LLM calls are made during auth testing.
+LLM_ENV=(
+    -e DERIVER_ENABLED=false
+    -e DREAM_ENABLED=false
+    -e SUMMARY_PROVIDER=custom -e SUMMARY_MODEL=test
+    -e DREAM_PROVIDER=custom -e DREAM_MODEL=test
+    -e DERIVER_PROVIDER=custom -e DERIVER_MODEL=test
+    -e DIALECTIC_LEVELS__MINIMAL__PROVIDER=custom -e DIALECTIC_LEVELS__MINIMAL__MODEL=test
+    -e DIALECTIC_LEVELS__MINIMAL__THINKING_BUDGET_TOKENS=0 -e DIALECTIC_LEVELS__MINIMAL__MAX_TOOL_ITERATIONS=1
+    -e DIALECTIC_LEVELS__MINIMAL__MAX_OUTPUT_TOKENS=250 -e DIALECTIC_LEVELS__MINIMAL__TOOL_CHOICE=any
+    -e DIALECTIC_LEVELS__LOW__PROVIDER=custom -e DIALECTIC_LEVELS__LOW__MODEL=test
+    -e DIALECTIC_LEVELS__LOW__THINKING_BUDGET_TOKENS=0 -e DIALECTIC_LEVELS__LOW__MAX_TOOL_ITERATIONS=5
+    -e DIALECTIC_LEVELS__LOW__TOOL_CHOICE=any
+    -e DIALECTIC_LEVELS__MEDIUM__PROVIDER=custom -e DIALECTIC_LEVELS__MEDIUM__MODEL=test
+    -e DIALECTIC_LEVELS__MEDIUM__THINKING_BUDGET_TOKENS=1024 -e DIALECTIC_LEVELS__MEDIUM__MAX_TOOL_ITERATIONS=2
+    -e DIALECTIC_LEVELS__HIGH__PROVIDER=custom -e DIALECTIC_LEVELS__HIGH__MODEL=test
+    -e DIALECTIC_LEVELS__HIGH__THINKING_BUDGET_TOKENS=1024 -e DIALECTIC_LEVELS__HIGH__MAX_TOOL_ITERATIONS=4
+    -e DIALECTIC_LEVELS__MAX__PROVIDER=custom -e DIALECTIC_LEVELS__MAX__MODEL=test
+    -e DIALECTIC_LEVELS__MAX__THINKING_BUDGET_TOKENS=2048 -e DIALECTIC_LEVELS__MAX__MAX_TOOL_ITERATIONS=10
+    -e LLM_OPENAI_COMPATIBLE_API_KEY=test -e LLM_OPENAI_COMPATIBLE_BASE_URL=http://localhost:1/v1
+    -e LLM_OPENROUTER_API_KEY=test -e LLM_EMBEDDING_PROVIDER=openrouter
+)
 
 # ---------- build ------------------------------------------------------------
 
@@ -77,8 +143,11 @@ docker run -d \
     --name "${CONTAINER_NAME}" \
     -p "${HONCHO_PORT}:8000" \
     -e AUTH_USE_AUTH=false \
-    -e LOG_LEVEL=DEBUG \
-    "${IMAGE_NAME}"
+    -e LOG_LEVEL=INFO \
+    "${LLM_ENV[@]}" \
+    --entrypoint //bin/bash \
+    "${IMAGE_NAME}" \
+    -c "${ENTRYPOINT_SCRIPT}"
 
 wait_for_health
 
@@ -126,14 +195,14 @@ echo "=== Test 2: Auth flow ==="
 # Generate a JWT secret and admin token locally for testing
 JWT_SECRET="test-secret-for-integration-tests-$(date +%s)"
 ADMIN_TOKEN=$(python3 -c "
-import jwt
-token = jwt.encode({'t': '', 'ad': True}, '${JWT_SECRET}'.encode('utf-8'), algorithm='HS256')
+import jwt, sys
+token = jwt.encode({'t': '', 'ad': True}, sys.argv[1].encode('utf-8'), algorithm='HS256')
 print(token)
-" 2>/dev/null || python -c "
-import jwt
-token = jwt.encode({'t': '', 'ad': True}, '${JWT_SECRET}'.encode('utf-8'), algorithm='HS256')
+" "${JWT_SECRET}" 2>/dev/null || python -c "
+import jwt, sys
+token = jwt.encode({'t': '', 'ad': True}, sys.argv[1].encode('utf-8'), algorithm='HS256')
 print(token)
-")
+" "${JWT_SECRET}")
 
 echo "Generated test JWT secret and admin token."
 echo "Starting container with AUTH_USE_AUTH=true..."
@@ -143,8 +212,11 @@ docker run -d \
     -p "${HONCHO_PORT}:8000" \
     -e AUTH_USE_AUTH=true \
     -e AUTH_JWT_SECRET="${JWT_SECRET}" \
-    -e LOG_LEVEL=DEBUG \
-    "${IMAGE_NAME}"
+    -e LOG_LEVEL=INFO \
+    "${LLM_ENV[@]}" \
+    --entrypoint //bin/bash \
+    "${IMAGE_NAME}" \
+    -c "${ENTRYPOINT_SCRIPT}"
 
 wait_for_health
 
