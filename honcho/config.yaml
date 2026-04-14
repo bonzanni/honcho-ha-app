@@ -30,6 +30,7 @@ options:
   log_level: "info"
   auth_enabled: false
   jwt_secret: ""
+  api_token: ""
   deriver_enabled: true
 schema:
   openrouter_api_key: password
@@ -44,4 +45,5 @@ schema:
   log_level: list(debug|info|warning|error|critical)
   auth_enabled: bool
   jwt_secret: password?
+  api_token: password?
   deriver_enabled: bool

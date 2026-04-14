@@ -35,6 +35,11 @@ configuration:
   jwt_secret:
     name: JWT Secret
     description: Secret key for signing JWT tokens (auto-generated if empty when auth is enabled)
+  api_token:
+    name: API Token
+    description: >-
+      JWT admin token for API access (auto-generated when auth is enabled).
+      Use this as the apiKey in the OpenClaw Honcho plugin configuration.
   deriver_enabled:
     name: Enable Deriver
     description: Run the background deriver worker for AI memory processing
