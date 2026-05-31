@@ -17,9 +17,8 @@ fi
 cd /app
 
 bashio::log.info "Starting Honcho API server..."
-# Use uvicorn directly with our health check wrapper.
-# The health module imports src.main:app and registers /health on it.
-exec /app/.venv/bin/python -m uvicorn health:app \
+# Honcho ships a native /health endpoint (v3.0.6+), used by the HA watchdog.
+exec /app/.venv/bin/python -m uvicorn src.main:app \
     --host 0.0.0.0 \
     --port 8000 \
     --app-dir /app
