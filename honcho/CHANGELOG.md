@@ -7,7 +7,7 @@
 - Embeddings now use OpenRouter's OpenAI-compatible `/embeddings` endpoint (`openai/text-embedding-3-small`)
 - `dream_model` now configures both the deduction and induction dream specialists (Honcho removed the single dream orchestrator model)
 - Use Honcho's native `/health` endpoint; remove the bundled health wrapper
-- Modernize the add-on `map:` declaration to object form
+- Modernize the add-on `map:` declaration to object form; drop the redundant `data` entry (`/data` is always mounted for add-ons, so persistence is unaffected)
 
 ## 0.1.7
 
