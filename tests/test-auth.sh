@@ -95,32 +95,32 @@ export CACHE_ENABLED=true
 export PSYCOPG_IMPL=python
 /app/.venv/bin/python scripts/provision_db.py 2>&1
 echo "Starting Honcho API (AUTH_USE_AUTH=${AUTH_USE_AUTH:-false})..."
-exec /app/.venv/bin/python -m uvicorn health:app --host 0.0.0.0 --port 8000 --app-dir /app
+exec /app/.venv/bin/python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --app-dir /app
 '
 
-# Dummy LLM provider env vars. The Honcho server validates that all configured
-# providers have API keys at import time. We use "custom" (OpenAI-compatible)
-# with fake keys — no LLM calls are made during auth testing.
+# Dummy LLM provider env vars (Honcho v3.0.7 scheme). No real LLM calls are made
+# during auth testing; transport=openai + a fake LLM_OPENAI_API_KEY is enough for
+# the server to start. Deriver and Dream are disabled.
 LLM_ENV=(
     -e DERIVER_ENABLED=false
     -e DREAM_ENABLED=false
-    -e SUMMARY_PROVIDER=custom -e SUMMARY_MODEL=test
-    -e DREAM_PROVIDER=custom -e DREAM_MODEL=test
-    -e DERIVER_PROVIDER=custom -e DERIVER_MODEL=test
-    -e DIALECTIC_LEVELS__MINIMAL__PROVIDER=custom -e DIALECTIC_LEVELS__MINIMAL__MODEL=test
-    -e DIALECTIC_LEVELS__MINIMAL__THINKING_BUDGET_TOKENS=0 -e DIALECTIC_LEVELS__MINIMAL__MAX_TOOL_ITERATIONS=1
-    -e DIALECTIC_LEVELS__MINIMAL__MAX_OUTPUT_TOKENS=250 -e DIALECTIC_LEVELS__MINIMAL__TOOL_CHOICE=any
-    -e DIALECTIC_LEVELS__LOW__PROVIDER=custom -e DIALECTIC_LEVELS__LOW__MODEL=test
-    -e DIALECTIC_LEVELS__LOW__THINKING_BUDGET_TOKENS=0 -e DIALECTIC_LEVELS__LOW__MAX_TOOL_ITERATIONS=5
-    -e DIALECTIC_LEVELS__LOW__TOOL_CHOICE=any
-    -e DIALECTIC_LEVELS__MEDIUM__PROVIDER=custom -e DIALECTIC_LEVELS__MEDIUM__MODEL=test
-    -e DIALECTIC_LEVELS__MEDIUM__THINKING_BUDGET_TOKENS=1024 -e DIALECTIC_LEVELS__MEDIUM__MAX_TOOL_ITERATIONS=2
-    -e DIALECTIC_LEVELS__HIGH__PROVIDER=custom -e DIALECTIC_LEVELS__HIGH__MODEL=test
-    -e DIALECTIC_LEVELS__HIGH__THINKING_BUDGET_TOKENS=1024 -e DIALECTIC_LEVELS__HIGH__MAX_TOOL_ITERATIONS=4
-    -e DIALECTIC_LEVELS__MAX__PROVIDER=custom -e DIALECTIC_LEVELS__MAX__MODEL=test
-    -e DIALECTIC_LEVELS__MAX__THINKING_BUDGET_TOKENS=2048 -e DIALECTIC_LEVELS__MAX__MAX_TOOL_ITERATIONS=10
-    -e LLM_OPENAI_COMPATIBLE_API_KEY=test -e LLM_OPENAI_COMPATIBLE_BASE_URL=http://localhost:1/v1
-    -e LLM_OPENROUTER_API_KEY=test -e LLM_EMBEDDING_PROVIDER=openrouter
+    -e LLM_OPENAI_API_KEY=test
+    -e DERIVER_MODEL_CONFIG__TRANSPORT=openai -e DERIVER_MODEL_CONFIG__MODEL=test
+    -e SUMMARY_MODEL_CONFIG__TRANSPORT=openai -e SUMMARY_MODEL_CONFIG__MODEL=test
+    -e DREAM_DEDUCTION_MODEL_CONFIG__TRANSPORT=openai -e DREAM_DEDUCTION_MODEL_CONFIG__MODEL=test
+    -e DREAM_INDUCTION_MODEL_CONFIG__TRANSPORT=openai -e DREAM_INDUCTION_MODEL_CONFIG__MODEL=test
+    -e DIALECTIC_LEVELS__minimal__MODEL_CONFIG__TRANSPORT=openai -e DIALECTIC_LEVELS__minimal__MODEL_CONFIG__MODEL=test
+    -e DIALECTIC_LEVELS__minimal__MAX_TOOL_ITERATIONS=1 -e DIALECTIC_LEVELS__minimal__MAX_OUTPUT_TOKENS=250
+    -e DIALECTIC_LEVELS__minimal__TOOL_CHOICE=any
+    -e DIALECTIC_LEVELS__low__MODEL_CONFIG__TRANSPORT=openai -e DIALECTIC_LEVELS__low__MODEL_CONFIG__MODEL=test
+    -e DIALECTIC_LEVELS__low__MAX_TOOL_ITERATIONS=5 -e DIALECTIC_LEVELS__low__TOOL_CHOICE=any
+    -e DIALECTIC_LEVELS__medium__MODEL_CONFIG__TRANSPORT=openai -e DIALECTIC_LEVELS__medium__MODEL_CONFIG__MODEL=test
+    -e DIALECTIC_LEVELS__medium__MAX_TOOL_ITERATIONS=2
+    -e DIALECTIC_LEVELS__high__MODEL_CONFIG__TRANSPORT=openai -e DIALECTIC_LEVELS__high__MODEL_CONFIG__MODEL=test
+    -e DIALECTIC_LEVELS__high__MAX_TOOL_ITERATIONS=4
+    -e DIALECTIC_LEVELS__max__MODEL_CONFIG__TRANSPORT=openai -e DIALECTIC_LEVELS__max__MODEL_CONFIG__MODEL=test
+    -e DIALECTIC_LEVELS__max__MAX_TOOL_ITERATIONS=10
+    -e EMBEDDING_MODEL_CONFIG__TRANSPORT=openai -e EMBEDDING_MODEL_CONFIG__MODEL=test
 )
 
 # ---------- build ------------------------------------------------------------
