@@ -54,6 +54,7 @@ OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
 
 # write_dialectic_level ENV_FILE LEVEL MODEL THINK_BUDGET ITERS MAX_OUT TOOL_CHOICE
 # MAX_OUT and TOOL_CHOICE are optional (pass "" to omit).
+# Reads global: OPENROUTER_BASE_URL
 write_dialectic_level() {
     local ENV_FILE="$1" LVL="$2" MODEL="$3" THINK="$4" ITERS="$5" MAXOUT="$6" TOOLCHOICE="$7"
     local P="DIALECTIC_LEVELS__${LVL}__"
