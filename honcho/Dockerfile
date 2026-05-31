@@ -1,6 +1,6 @@
 # Stage 1: Build Honcho Python application
 # Uses Docker Hub Python image (independent of HA base)
-ARG HONCHO_VERSION=v3.0.5
+ARG HONCHO_VERSION=v3.0.7
 
 FROM python:3.13-slim-bookworm AS honcho-builder
 
