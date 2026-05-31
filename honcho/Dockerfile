@@ -25,8 +25,10 @@ RUN rm -f .python-version \
     && uv sync --frozen --no-group dev --python 3.13
 
 # Stage 2: Runtime container
-# Must use trixie for python3.13, postgresql-17, postgresql-17-pgvector
-FROM ghcr.io/home-assistant/base-debian:trixie
+# Must use trixie for python3.13, postgresql-17, postgresql-17-pgvector.
+# Pin the dated base tag (not the floating `trixie` codename) for reproducible
+# builds; bump deliberately. Ships S6-overlay v3 (so config.yaml sets init: false).
+FROM ghcr.io/home-assistant/base-debian:trixie-2026.05.0
 
 # Install runtime dependencies
 RUN apt-get update \

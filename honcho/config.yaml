@@ -1,6 +1,6 @@
 name: Honcho
 description: AI memory infrastructure for Home Assistant
-version: "0.2.0"
+version: "0.2.1"
 slug: honcho
 url: https://github.com/bonzanni/honcho-ha-app
 arch:
@@ -12,11 +12,13 @@ ports:
   8000/tcp: null
 ports_description:
   8000/tcp: Honcho API
-watchdog: http://[HOST]:8000/health
+watchdog: http://[HOST]:[PORT:8000]/health
 backup: cold
-map:
-  - type: share
-    read_only: false
+# Self-options writes (bashio::addon.option for jwt_secret/api_token) and
+# supervisor.ping go through the Supervisor REST API. These specific calls are
+# allowed for an add-on's own token without this flag, but declaring it makes the
+# intent explicit and is robust to Supervisor ACL changes. Role left at default.
+hassio_api: true
 options:
   openrouter_api_key: ""
   deriver_model: "google/gemini-2.5-flash-lite"

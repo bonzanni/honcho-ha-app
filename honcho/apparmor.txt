@@ -41,7 +41,6 @@ profile honcho flags=(attach_disconnected,mediate_deleted) {
 
   # Persistent data and config
   /data/** rw,
-  /share/** r,
 
   # Network
   network inet stream,

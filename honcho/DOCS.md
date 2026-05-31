@@ -20,7 +20,9 @@ Honcho is an AI memory infrastructure that provides persistent, contextualized m
 
 Each Honcho subsystem can use a different OpenRouter model. Defaults match Honcho's upstream choices (using latest model versions). Change them to control cost vs quality.
 
-Embedding uses `openai/text-embedding-3-small` (hardcoded by Honcho, not configurable).
+Embedding uses `openai/text-embedding-3-small`, routed through OpenRouter's
+OpenAI-compatible `/embeddings` endpoint. It is fixed by the add-on and not
+exposed as an option.
 
 #### Task Models
 
@@ -43,6 +45,12 @@ The Dialectic system uses escalating model tiers. Cheaper models handle simple q
 | **dialectic_max_model** | `anthropic/claude-haiku-4.5` | $1.00 | $5.00 | 2048 tokens | 10 |
 
 > **Cost tip**: For cheaper operation, set all dialectic levels to `google/gemini-2.5-flash-lite`. For best quality, set high/max to `anthropic/claude-sonnet-4.6`.
+
+> **Note on thinking budgets**: The "Thinking" column reflects Honcho's intended
+> reasoning budget per level. Because all models route through OpenRouter using
+> the `openai` transport, Honcho strips its Anthropic-style thinking-budget
+> parameter, so these budgets are currently best-effort no-ops. They are kept for
+> parity and forward-compatibility; tool-iteration limits still apply.
 
 *Prices from OpenRouter as of April 2026. Check https://openrouter.ai/models for current pricing.*
 

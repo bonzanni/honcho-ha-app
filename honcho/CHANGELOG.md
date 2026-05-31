@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1
+
+- Pin the base image to the dated tag `base-debian:trixie-2026.05.0` instead of
+  the floating `trixie` codename, for reproducible builds.
+- Remove the unused read-write `share` mount and its AppArmor grant (least
+  privilege; `/data` is always mounted, so persistence is unaffected).
+- Declare `hassio_api: true` to make the init script's Supervisor self-API calls
+  (writing `jwt_secret`/`api_token`, `supervisor.ping`) explicit. Role stays at
+  default.
+- Use the `[PORT:8000]` watchdog placeholder so the health check follows a
+  user-remapped port.
+- Docs: clarify that dialectic thinking budgets are best-effort no-ops under the
+  OpenRouter (`openai` transport) routing, and that the embedding model is fixed
+  by the add-on (not by Honcho).
+
 ## 0.2.0
 
 - Upgrade bundled Honcho to v3.0.7
