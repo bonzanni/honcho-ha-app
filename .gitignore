@@ -1,6 +1,8 @@
 # Claude
 .claude/
-docs/superpowers/
+
+# Docs are maintained in a separate private repo (bonzanni/honcho-ha-app-docs)
+docs/
 
 # IDE
 .vscode/
