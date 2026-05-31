@@ -1,6 +1,6 @@
 name: Honcho
 description: AI memory infrastructure for Home Assistant
-version: "0.1.7"
+version: "0.2.0"
 slug: honcho
 url: https://github.com/bonzanni/honcho-ha-app
 arch:
@@ -15,8 +15,8 @@ ports_description:
 watchdog: http://[HOST]:8000/health
 backup: cold
 map:
-  - share:rw
-  - data:rw
+  - type: share
+    read_only: false
 options:
   openrouter_api_key: ""
   deriver_model: "google/gemini-2.5-flash-lite"
