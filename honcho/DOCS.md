@@ -28,7 +28,7 @@ Embedding uses `openai/text-embedding-3-small` (hardcoded by Honcho, not configu
 |--------|---------|--------|---------|---------|
 | **deriver_model** | `google/gemini-2.5-flash-lite` | $0.10 | $0.40 | Processes conversation memory into observations |
 | **summary_model** | `google/gemini-2.5-flash` | $0.30 | $2.50 | Generates session summaries |
-| **dream_model** | `anthropic/claude-sonnet-4.6` | $3.00 | $15.00 | Deep memory consolidation (runs every 8+ hours) |
+| **dream_model** | `anthropic/claude-sonnet-4.6` | $3.00 | $15.00 | Configures both dream specialists (deduction + induction); deep memory consolidation (runs every 8+ hours) |
 
 #### Dialectic Reasoning Levels
 
