@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2
+
+- Replace the add-on `icon.png` with the official Honcho saluting-face mark on
+  the brand-blue (`#B5DAFF`) background, sourced from upstream branding
+  (`plastic-labs/honcho`). The previous icon was an off-brand, glitchy navy
+  emoji that did not match the project's identity.
+- Refresh `logo.png` from the upstream wordmark vector (`assets/honcho.svg`) for
+  a crisp, higher-resolution rendering.
+
 ## 0.2.1
 
 - Pin the base image to the dated tag `base-debian:trixie-2026.05.0` instead of

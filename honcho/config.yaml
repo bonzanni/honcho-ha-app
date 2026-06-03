@@ -1,6 +1,6 @@
 name: Honcho
 description: AI memory infrastructure for Home Assistant
-version: "0.2.1"
+version: "0.2.2"
 slug: honcho
 url: https://github.com/bonzanni/honcho-ha-app
 arch:
